@@ -9,8 +9,13 @@ import com.suraj.uploadplatform.exception.InvalidUploadRequestException;
 import com.suraj.uploadplatform.exception.ResourceNotFoundException;
 import com.suraj.uploadplatform.exception.UploadStateException;
 import com.suraj.uploadplatform.infrastructure.opensearch.document.FileDocument;
-import com.suraj.uploadplatform.infrastructure.opensearch.service.repo.IFileMetadataRepository;
-import com.suraj.uploadplatform.infrastructure.s3.S3StorageService;
+import com.suraj.uploadplatform.infrastructure.opensearch.service.repo.FileMetadataRepository;
+import com.suraj.uploadplatform.infrastructure.storage.ObjectStorageService;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Arrays;
 import java.net.URL;
 import java.util.List;
 import java.util.Locale;
@@ -27,19 +32,19 @@ public class FileUploadService {
     private static final Logger log = LoggerFactory.getLogger(FileUploadService.class);
 
     private final UploadStrategyEngine strategyEngine;
-    private final S3StorageService s3StorageService;
-    private final IFileMetadataRepository fileMetadataRepository;
+    private final ObjectStorageService objectStorageService;
+    private final FileMetadataRepository fileMetadataRepository;
     private final UploadEventPublisher uploadEventPublisher;
     private final UploadProperties uploadProperties;
 
     public FileUploadService(
             UploadStrategyEngine strategyEngine,
-            S3StorageService s3StorageService,
-            IFileMetadataRepository fileMetadataRepository,
+            ObjectStorageService objectStorageService,
+            FileMetadataRepository fileMetadataRepository,
             UploadEventPublisher uploadEventPublisher,
             UploadProperties uploadProperties) {
         this.strategyEngine = strategyEngine;
-        this.s3StorageService = s3StorageService;
+        this.objectStorageService = objectStorageService;
         this.fileMetadataRepository = fileMetadataRepository;
         this.uploadEventPublisher = uploadEventPublisher;
         this.uploadProperties = uploadProperties;
@@ -65,7 +70,8 @@ public class FileUploadService {
 
         String fileId = UUID.randomUUID().toString();
         UploadStrategy strategy = strategyEngine.determine(request.getSize());
-        String s3Key = s3StorageService.buildObjectKey(fileId, request.getFileName());
+        String s3Key = objectStorageService.buildObjectKey(fileId, request.getFileName());
+        Instant now = Instant.now();
 
         FileDocument document = new FileDocument();
         document.setFileId(fileId);
@@ -79,6 +85,8 @@ public class FileUploadService {
         document.setIdempotencyKey(request.getIdempotencyKey());
         document.setStatus(UploadStatus.PENDING);
         document.setStrategy(strategy);
+        document.setCreatedAt(now);
+        document.setUpdatedAt(now);
 
         log.info(
                 "Upload initiated fileId={} strategy={} size={} contentType={}",
@@ -104,11 +112,12 @@ public class FileUploadService {
         validateBackendFile(document, file);
 
         document.setStatus(UploadStatus.UPLOADING);
-        fileMetadataRepository.update(document);
+        document.setUpdatedAt(Instant.now());
+        fileMetadataRepository.save(document);
 
         log.info("Backend upload started fileId={} size={}", fileId, file.getSize());
         try {
-            s3StorageService.uploadThroughBackend(
+            objectStorageService.uploadThroughBackend(
                     document.getS3Key(), document.getContentType(), file);
             return markUploaded(document);
         } catch (RuntimeException ex) {
@@ -146,7 +155,7 @@ public class FileUploadService {
         }
 
         try {
-            s3StorageService.completeMultipartUpload(
+            objectStorageService.completeMultipartUpload(
                     document.getS3Key(), document.getUploadId(), request.getParts());
             verifyObjectExists(document);
             log.info(
@@ -173,7 +182,7 @@ public class FileUploadService {
             case BACKEND -> baseResponse(document).build();
             case DIRECT_S3 -> {
                 URL uploadUrl =
-                        s3StorageService.presignPutObject(
+                        objectStorageService.presignPutObject(
                                 document.getS3Key(), document.getContentType());
                 yield baseResponse(document).uploadUrl(uploadUrl.toString()).build();
             }
@@ -181,7 +190,7 @@ public class FileUploadService {
                 String multipartUploadId = document.getUploadId();
                 if (multipartUploadId == null || multipartUploadId.isBlank()) {
                     multipartUploadId =
-                            s3StorageService.initiateMultipartUpload(
+                            objectStorageService.initiateMultipartUpload(
                                     document.getS3Key(), document.getContentType());
                     document.setUploadId(multipartUploadId);
                 }
@@ -194,7 +203,7 @@ public class FileUploadService {
                                                 PartUploadUrlResponse.builder()
                                                         .partNumber(partNumber)
                                                         .uploadUrl(
-                                                                s3StorageService
+                                                                objectStorageService
                                                                         .presignUploadPart(
                                                                                 document.getS3Key(),
                                                                                 uploadId,
@@ -232,9 +241,10 @@ public class FileUploadService {
     }
 
     private void verifyObjectExists(FileDocument document) {
-        if (!s3StorageService.objectExists(document.getS3Key())) {
+        if (!objectStorageService.objectExists(document.getS3Key())) {
             document.setStatus(UploadStatus.FAILED);
-            fileMetadataRepository.update(document);
+            document.setUpdatedAt(Instant.now());
+            fileMetadataRepository.save(document);
             throw new ResourceNotFoundException(
                     ApplicationConstants.ErrorMessage.S3_OBJECT_NOT_FOUND);
         }
@@ -258,7 +268,28 @@ public class FileUploadService {
         String contentType = file.getContentType();
         if (contentType == null
                 || !ApplicationConstants.Upload.PDF_CONTENT_TYPE.equalsIgnoreCase(contentType)
-                || !document.getSize().equals(file.getSize())) {
+                || file.isEmpty()
+                || !document.getSize().equals(file.getSize())
+                || file.getSize() > uploadProperties.getMaxFileSizeBytes()
+                || !isPdfFileName(file.getOriginalFilename())
+                || !hasPdfHeader(file)) {
+            throw new InvalidUploadRequestException(
+                    ApplicationConstants.ErrorMessage.BACKEND_FILE_METADATA_MISMATCH);
+        }
+    }
+
+    private boolean isPdfFileName(String fileName) {
+        return fileName != null
+                && fileName.toLowerCase(Locale.ROOT).endsWith(ApplicationConstants.Upload.PDF_EXTENSION);
+    }
+
+    private boolean hasPdfHeader(MultipartFile file) {
+        byte[] expectedHeader = "%PDF-".getBytes(StandardCharsets.US_ASCII);
+        byte[] actualHeader = new byte[expectedHeader.length];
+        try (InputStream inputStream = file.getInputStream()) {
+            int bytesRead = inputStream.read(actualHeader);
+            return bytesRead == expectedHeader.length && Arrays.equals(expectedHeader, actualHeader);
+        } catch (IOException ex) {
             throw new InvalidUploadRequestException(
                     ApplicationConstants.ErrorMessage.BACKEND_FILE_METADATA_MISMATCH);
         }
@@ -275,7 +306,8 @@ public class FileUploadService {
 
     private FileMetadataResponse markUploaded(FileDocument document) {
         document.setStatus(UploadStatus.UPLOADED);
-        fileMetadataRepository.update(document);
+        document.setUpdatedAt(Instant.now());
+        fileMetadataRepository.save(document);
         uploadEventPublisher.publishUploadCompleted(document);
         log.info("Upload completed fileId={}", document.getFileId());
         return toResponse(document);
@@ -283,7 +315,8 @@ public class FileUploadService {
 
     private void markFailed(FileDocument document) {
         document.setStatus(UploadStatus.FAILED);
-        fileMetadataRepository.update(document);
+        document.setUpdatedAt(Instant.now());
+        fileMetadataRepository.save(document);
         log.warn("Upload failed fileId={}", document.getFileId());
     }
 

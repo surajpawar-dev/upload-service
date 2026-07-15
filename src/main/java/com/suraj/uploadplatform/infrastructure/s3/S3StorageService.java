@@ -4,6 +4,7 @@ import com.suraj.uploadplatform.common.constants.ApplicationConstants;
 import com.suraj.uploadplatform.common.properties.S3Properties;
 import com.suraj.uploadplatform.common.properties.UploadProperties;
 import com.suraj.uploadplatform.dto.CompletedPartRequest;
+import com.suraj.uploadplatform.infrastructure.storage.ObjectStorageService;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
@@ -13,6 +14,7 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -31,7 +33,12 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 import software.amazon.awssdk.services.s3.presigner.model.UploadPartPresignRequest;
 
 @Service
-public class S3StorageService {
+@ConditionalOnProperty(
+        prefix = ApplicationConstants.Aws.S3_PROPERTY_PREFIX,
+        name = ApplicationConstants.Property.ENABLED,
+        havingValue = ApplicationConstants.TRUE,
+        matchIfMissing = true)
+public class S3StorageService implements ObjectStorageService {
 
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
@@ -49,10 +56,12 @@ public class S3StorageService {
         this.uploadProperties = uploadProperties;
     }
 
+    @Override
     public String buildObjectKey(String fileId, String fileName) {
         return fileId + ApplicationConstants.FORWARD_SLASH + normalizeFileName(fileName);
     }
 
+    @Override
     public URL presignPutObject(String s3Key, String contentType) {
         PutObjectRequest putObjectRequest =
                 PutObjectRequest.builder()
@@ -71,6 +80,7 @@ public class S3StorageService {
         return presignedRequest.url();
     }
 
+    @Override
     public void uploadThroughBackend(String s3Key, String contentType, MultipartFile file) {
         PutObjectRequest request =
                 PutObjectRequest.builder()
@@ -88,6 +98,7 @@ public class S3StorageService {
         }
     }
 
+    @Override
     public String initiateMultipartUpload(String s3Key, String contentType) {
         CreateMultipartUploadRequest request =
                 CreateMultipartUploadRequest.builder()
@@ -98,6 +109,7 @@ public class S3StorageService {
         return s3Client.createMultipartUpload(request).uploadId();
     }
 
+    @Override
     public URL presignUploadPart(String s3Key, String uploadId, int partNumber) {
         UploadPartPresignRequest request =
                 UploadPartPresignRequest.builder()
@@ -115,6 +127,7 @@ public class S3StorageService {
         return presignedRequest.url();
     }
 
+    @Override
     public void completeMultipartUpload(
             String s3Key, String uploadId, List<CompletedPartRequest> partRequests) {
         List<CompletedPart> completedParts =
@@ -140,6 +153,7 @@ public class S3StorageService {
         s3Client.completeMultipartUpload(request);
     }
 
+    @Override
     public boolean objectExists(String s3Key) {
         try {
             s3Client.headObject(
@@ -150,6 +164,7 @@ public class S3StorageService {
         }
     }
 
+    @Override
     public Instant presignedUrlExpiresAt() {
         return Instant.now().plus(signatureDuration());
     }
