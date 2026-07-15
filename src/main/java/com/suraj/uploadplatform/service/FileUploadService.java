@@ -269,7 +269,6 @@ public class FileUploadService {
         if (contentType == null
                 || !ApplicationConstants.Upload.PDF_CONTENT_TYPE.equalsIgnoreCase(contentType)
                 || file.isEmpty()
-                || !document.getSize().equals(file.getSize())
                 || file.getSize() > uploadProperties.getMaxFileSizeBytes()
                 || !isPdfFileName(file.getOriginalFilename())
                 || !hasPdfHeader(file)) {

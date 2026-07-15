@@ -27,7 +27,7 @@ It does not perform PDF text extraction, chunking, embedding generation, vector 
 - Spring Validation
 - Spring Actuator
 - Springdoc OpenAPI
-- Logback JSON logging
+- Spring Boot console logging locally
 - Optional CloudWatch Logs appender
 
 ## Prerequisites
@@ -509,7 +509,8 @@ In production, this abstraction can be replaced with an implementation that publ
 
 ## Logging
 
-The service uses structured JSON logs. Each HTTP request includes:
+The service uses Spring Boot's default console log format locally. When the `cloudwatch` Spring profile is active,
+the CloudWatch appender sends structured log events that include:
 
 - HTTP method.
 - Request path.

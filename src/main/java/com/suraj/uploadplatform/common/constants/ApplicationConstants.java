@@ -11,7 +11,7 @@ public final class ApplicationConstants {
 
     public static final class Aws {
 
-        public static final String REGION_DEFAULT = "us-east-1";
+        public static final String REGION_DEFAULT = "eu-north-1";
         public static final String S3_PROPERTY_PREFIX = "aws.s3";
 
         private Aws() {}
