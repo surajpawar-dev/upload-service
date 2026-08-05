@@ -44,7 +44,8 @@ public final class ApplicationConstants {
         public static final String CORRELATION_ID_MDC_KEY = "correlationId";
         public static final String REQUEST_STARTED = "HTTP request started";
         public static final String REQUEST_COMPLETED = "HTTP request completed";
-        public static final String DEFAULT_CLOUDWATCH_LOG_GROUP = "/document-rag-platform/rag-upload-service";
+        public static final String DEFAULT_CLOUDWATCH_LOG_GROUP =
+                "/document-rag-platform/rag-upload-service";
         public static final String DEFAULT_CLOUDWATCH_LOG_STREAM = "local";
 
         private Logging() {}

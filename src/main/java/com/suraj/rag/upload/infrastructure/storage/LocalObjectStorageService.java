@@ -82,7 +82,8 @@ public class LocalObjectStorageService implements ObjectStorageService {
 
     @Override
     public Instant presignedUrlExpiresAt() {
-        return Instant.now().plus(Duration.ofMinutes(uploadProperties.getPresignedUrlExpirationMinutes()));
+        return Instant.now()
+                .plus(Duration.ofMinutes(uploadProperties.getPresignedUrlExpirationMinutes()));
     }
 
     private Path resolveObjectPath(String objectKey) {
@@ -95,7 +96,8 @@ public class LocalObjectStorageService implements ObjectStorageService {
 
     private URL localUrl(String objectKey) {
         try {
-            return URI.create("file:///" + resolveObjectPath(objectKey).toString().replace("\\", "/"))
+            return URI.create(
+                            "file:///" + resolveObjectPath(objectKey).toString().replace("\\", "/"))
                     .toURL();
         } catch (MalformedURLException ex) {
             throw new IllegalArgumentException("Invalid local object URL", ex);

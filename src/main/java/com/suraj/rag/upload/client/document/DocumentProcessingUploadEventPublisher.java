@@ -15,10 +15,15 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 @Component
-@ConditionalOnProperty(prefix = "app.document-processing", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(
+        prefix = "app.document-processing",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = true)
 public class DocumentProcessingUploadEventPublisher implements UploadEventPublisher {
 
-    private static final Logger log = LoggerFactory.getLogger(DocumentProcessingUploadEventPublisher.class);
+    private static final Logger log =
+            LoggerFactory.getLogger(DocumentProcessingUploadEventPublisher.class);
 
     private final RestTemplate restTemplate;
     private final DocumentProcessingProperties properties;
@@ -34,16 +39,22 @@ public class DocumentProcessingUploadEventPublisher implements UploadEventPublis
     }
 
     @Override
-    @Retryable(retryFor = RestClientException.class, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2.0))
+    @Retryable(
+            retryFor = RestClientException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2.0))
     public void publishUploadCompleted(FileDocument document) {
-        ProcessDocumentRequest request = new ProcessDocumentRequest(
-                document.getFileName(),
-                s3Properties.getS3().getBucketName(),
-                document.getS3Key(),
-                document.getChecksum(),
-                properties.getLanguage());
+        ProcessDocumentRequest request =
+                new ProcessDocumentRequest(
+                        document.getFileName(),
+                        s3Properties.getS3().getBucketName(),
+                        document.getS3Key(),
+                        document.getChecksum(),
+                        properties.getLanguage());
         restTemplate.postForObject("/documents/process", request, Object.class);
-        log.info("Submitted uploaded PDF to rag-document-processing-service fileId={} s3Key={}",
-                document.getFileId(), document.getS3Key());
+        log.info(
+                "Submitted uploaded PDF to rag-document-processing-service fileId={} s3Key={}",
+                document.getFileId(),
+                document.getS3Key());
     }
 }

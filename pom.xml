@@ -183,6 +183,8 @@
                 <include>.gitattributes</include>
                 <include>.gitignore</include>
                 <include>src/**/*.properties</include>
+                <include>src/**/*.yml</include>
+                <include>src/**/*.yaml</include>
               </includes>
               <trimTrailingWhitespace/>
               <endWithNewline/>

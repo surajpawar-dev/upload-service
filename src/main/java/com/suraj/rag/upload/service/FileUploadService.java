@@ -13,12 +13,12 @@ import com.suraj.rag.upload.infrastructure.opensearch.service.repo.FileMetadataR
 import com.suraj.rag.upload.infrastructure.storage.ObjectStorageService;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Arrays;
-import java.net.URL;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -232,7 +232,7 @@ public class FileUploadService {
                 .fileId(document.getFileId())
                 .bookId(document.getBookId())
                 .title(document.getTitle())
-                 .s3Key(document.getS3Key())
+                .s3Key(document.getS3Key())
                 .checksum(document.getChecksum())
                 .status(document.getStatus())
                 .strategy(document.getStrategy());
@@ -286,7 +286,8 @@ public class FileUploadService {
 
     private boolean isPdfFileName(String fileName) {
         return fileName != null
-                && fileName.toLowerCase(Locale.ROOT).endsWith(ApplicationConstants.Upload.PDF_EXTENSION);
+                && fileName.toLowerCase(Locale.ROOT)
+                        .endsWith(ApplicationConstants.Upload.PDF_EXTENSION);
     }
 
     private boolean hasPdfHeader(MultipartFile file) {
@@ -294,7 +295,8 @@ public class FileUploadService {
         byte[] actualHeader = new byte[expectedHeader.length];
         try (InputStream inputStream = file.getInputStream()) {
             int bytesRead = inputStream.read(actualHeader);
-            return bytesRead == expectedHeader.length && Arrays.equals(expectedHeader, actualHeader);
+            return bytesRead == expectedHeader.length
+                    && Arrays.equals(expectedHeader, actualHeader);
         } catch (IOException ex) {
             throw new InvalidUploadRequestException(
                     ApplicationConstants.ErrorMessage.BACKEND_FILE_METADATA_MISMATCH);
@@ -329,7 +331,8 @@ public class FileUploadService {
 
     private void validateChecksumPresent(FileDocument document) {
         if (document.getChecksum() == null || document.getChecksum().isBlank()) {
-            throw new InvalidUploadRequestException("checksum is required before submitting document for processing");
+            throw new InvalidUploadRequestException(
+                    "checksum is required before submitting document for processing");
         }
     }
 
@@ -354,13 +357,14 @@ public class FileUploadService {
             throw new IllegalStateException("SHA-256 is not available", ex);
         }
     }
+
     private FileMetadataResponse toResponse(FileDocument document) {
         return FileMetadataResponse.builder()
                 .fileId(document.getFileId())
                 .fileName(document.getFileName())
                 .bookId(document.getBookId())
                 .title(document.getTitle())
-                 .s3Key(document.getS3Key())
+                .s3Key(document.getS3Key())
                 .checksum(document.getChecksum())
                 .contentType(document.getContentType())
                 .size(document.getSize())
