@@ -39,6 +39,9 @@ public class FileDocument {
     private String s3Key;
 
     @Field(type = FieldType.Keyword)
+    private String checksum;
+
+    @Field(type = FieldType.Keyword)
     private String uploadId;
 
     @Field(type = FieldType.Keyword)
@@ -65,3 +68,5 @@ public class FileDocument {
     @Field(type = FieldType.Date, format = DateFormat.date_time)
     private Instant updatedAt;
 }
+
+

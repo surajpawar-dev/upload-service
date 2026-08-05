@@ -5,3 +5,4 @@ public enum UploadStrategy {
     DIRECT_S3,
     MULTIPART
 }
+

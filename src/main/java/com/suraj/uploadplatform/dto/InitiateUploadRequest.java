@@ -34,4 +34,9 @@ public class InitiateUploadRequest {
 
     @Schema(description = "Client-generated key used to safely retry initiate requests")
     @NotBlank private String idempotencyKey;
+
+    @Schema(description = "SHA-256 checksum. Required for direct S3 and multipart uploads.")
+    private String checksum;
 }
+
+

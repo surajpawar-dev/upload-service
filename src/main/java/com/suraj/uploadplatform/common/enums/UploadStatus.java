@@ -6,3 +6,4 @@ public enum UploadStatus {
     UPLOADED,
     FAILED
 }
+

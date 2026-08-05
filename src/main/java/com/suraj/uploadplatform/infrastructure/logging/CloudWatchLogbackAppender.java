@@ -156,3 +156,4 @@ public class CloudWatchLogbackAppender extends UnsynchronizedAppenderBase<ILoggi
         return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }
+

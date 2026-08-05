@@ -9,3 +9,4 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
 @ConditionalOnProperty(prefix = "opensearch", name = "enabled", havingValue = "true")
 @EnableElasticsearchRepositories(basePackageClasses = IFileMetadataRepository.class)
 public class OpenSearchRepositoryConfig {}
+

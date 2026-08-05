@@ -15,3 +15,4 @@ public class PartUploadUrlResponse {
     @Schema(description = "Presigned URL for uploading the part")
     private String uploadUrl;
 }
+

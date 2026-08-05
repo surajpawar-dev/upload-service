@@ -3,9 +3,11 @@ package com.suraj.uploadplatform.service;
 import com.suraj.uploadplatform.infrastructure.opensearch.document.FileDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Component
+@ConditionalOnProperty(prefix = "app.document-processing", name = "enabled", havingValue = "false")
 public class LoggingUploadEventPublisher implements UploadEventPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(LoggingUploadEventPublisher.class);
@@ -19,3 +21,5 @@ public class LoggingUploadEventPublisher implements UploadEventPublisher {
                 document.getS3Key());
     }
 }
+
+

@@ -6,3 +6,4 @@ public interface UploadEventPublisher {
 
     void publishUploadCompleted(FileDocument document);
 }
+

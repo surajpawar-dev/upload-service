@@ -24,6 +24,9 @@ public class InitiateUploadResponse {
     @Schema(description = "Private S3 object key")
     private String s3Key;
 
+    @Schema(description = "SHA-256 checksum when supplied by the client")
+    private String checksum;
+
     @Schema(description = "Current upload status")
     private UploadStatus status;
 
@@ -39,3 +42,5 @@ public class InitiateUploadResponse {
     @Schema(description = "Presigned URLs for multipart upload parts")
     private List<PartUploadUrlResponse> partUploadUrls;
 }
+
+

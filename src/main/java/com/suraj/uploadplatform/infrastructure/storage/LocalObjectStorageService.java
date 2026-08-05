@@ -107,3 +107,4 @@ public class LocalObjectStorageService implements ObjectStorageService {
         return normalized.replaceAll("[^a-zA-Z0-9._-]", "-").toLowerCase(Locale.ROOT);
     }
 }
+

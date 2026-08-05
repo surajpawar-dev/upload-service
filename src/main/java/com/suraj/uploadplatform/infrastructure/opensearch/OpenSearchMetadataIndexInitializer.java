@@ -53,3 +53,4 @@ public class OpenSearchMetadataIndexInitializer implements ApplicationRunner {
                 ApplicationConstants.OpenSearch.FILES_INDEX);
     }
 }
+

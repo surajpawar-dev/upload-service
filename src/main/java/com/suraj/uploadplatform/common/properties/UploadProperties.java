@@ -23,3 +23,4 @@ public class UploadProperties {
 
     private long maxFileSizeBytes = ApplicationConstants.Upload.MULTIPART_MIN_BYTES * 10;
 }
+

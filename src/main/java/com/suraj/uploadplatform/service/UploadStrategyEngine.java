@@ -27,3 +27,4 @@ public class UploadStrategyEngine {
         return (int) Math.ceil((double) fileSize / properties.getMultipartPartSizeBytes());
     }
 }
+

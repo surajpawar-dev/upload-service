@@ -7,10 +7,12 @@ import org.springframework.boot.test.context.SpringBootTest;
         properties = {
             "aws.s3.enabled=false",
             "opensearch.enabled=false",
-            "spring.data.elasticsearch.repositories.enabled=false"
+            "spring.data.elasticsearch.repositories.enabled=false",
+            "app.document-processing.enabled=false"
         })
 class UploadPlatformApplicationTests {
 
     @Test
     void contextLoads() {}
 }
+

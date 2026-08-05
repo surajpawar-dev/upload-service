@@ -18,3 +18,4 @@ public class CloudWatchLoggingProperties {
 
     private String logStream = ApplicationConstants.Logging.DEFAULT_CLOUDWATCH_LOG_STREAM;
 }
+

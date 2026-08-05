@@ -14,6 +14,8 @@ import com.suraj.uploadplatform.infrastructure.storage.ObjectStorageService;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.net.URL;
@@ -79,6 +81,7 @@ public class FileUploadService {
         document.setTitle(request.getTitle());
         document.setFileName(request.getFileName());
         document.setS3Key(s3Key);
+        document.setChecksum(request.getChecksum());
         document.setContentType(request.getContentType());
         document.setSize(request.getSize());
         document.setUploadedBy(request.getUploadedBy());
@@ -110,6 +113,7 @@ public class FileUploadService {
                     ApplicationConstants.ErrorMessage.BACKEND_UPLOAD_NOT_ALLOWED);
         }
         validateBackendFile(document, file);
+        document.setChecksum(sha256(file));
 
         document.setStatus(UploadStatus.UPLOADING);
         document.setUpdatedAt(Instant.now());
@@ -140,6 +144,7 @@ public class FileUploadService {
                     ApplicationConstants.ErrorMessage.MULTIPART_UPLOAD_REQUIRED);
         }
         verifyObjectExists(document);
+        validateChecksumPresent(document);
         return markUploaded(document);
     }
 
@@ -158,6 +163,7 @@ public class FileUploadService {
             objectStorageService.completeMultipartUpload(
                     document.getS3Key(), document.getUploadId(), request.getParts());
             verifyObjectExists(document);
+            validateChecksumPresent(document);
             log.info(
                     "Multipart upload completed fileId={} partCount={}",
                     fileId,
@@ -226,7 +232,8 @@ public class FileUploadService {
                 .fileId(document.getFileId())
                 .bookId(document.getBookId())
                 .title(document.getTitle())
-                .s3Key(document.getS3Key())
+                 .s3Key(document.getS3Key())
+                .checksum(document.getChecksum())
                 .status(document.getStatus())
                 .strategy(document.getStrategy());
     }
@@ -300,7 +307,8 @@ public class FileUploadService {
                 && document.getFileName().equals(request.getFileName())
                 && document.getContentType().equals(request.getContentType())
                 && document.getSize().equals(request.getSize())
-                && document.getUploadedBy().equals(request.getUploadedBy());
+                && document.getUploadedBy().equals(request.getUploadedBy())
+                && java.util.Objects.equals(document.getChecksum(), request.getChecksum());
     }
 
     private FileMetadataResponse markUploaded(FileDocument document) {
@@ -319,13 +327,41 @@ public class FileUploadService {
         log.warn("Upload failed fileId={}", document.getFileId());
     }
 
+    private void validateChecksumPresent(FileDocument document) {
+        if (document.getChecksum() == null || document.getChecksum().isBlank()) {
+            throw new InvalidUploadRequestException("checksum is required before submitting document for processing");
+        }
+    }
+
+    private String sha256(MultipartFile file) {
+        try (InputStream inputStream = file.getInputStream()) {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] buffer = new byte[8192];
+            int read;
+            while ((read = inputStream.read(buffer)) != -1) {
+                digest.update(buffer, 0, read);
+            }
+            byte[] hash = digest.digest();
+            StringBuilder value = new StringBuilder(hash.length * 2);
+            for (byte b : hash) {
+                value.append(String.format("%02x", b));
+            }
+            return value.toString();
+        } catch (IOException ex) {
+            throw new InvalidUploadRequestException(
+                    ApplicationConstants.ErrorMessage.BACKEND_FILE_METADATA_MISMATCH);
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("SHA-256 is not available", ex);
+        }
+    }
     private FileMetadataResponse toResponse(FileDocument document) {
         return FileMetadataResponse.builder()
                 .fileId(document.getFileId())
                 .fileName(document.getFileName())
                 .bookId(document.getBookId())
                 .title(document.getTitle())
-                .s3Key(document.getS3Key())
+                 .s3Key(document.getS3Key())
+                .checksum(document.getChecksum())
                 .contentType(document.getContentType())
                 .size(document.getSize())
                 .status(document.getStatus())
@@ -337,3 +373,5 @@ public class FileUploadService {
                 .build();
     }
 }
+
+

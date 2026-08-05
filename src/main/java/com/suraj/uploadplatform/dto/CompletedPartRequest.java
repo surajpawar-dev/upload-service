@@ -18,3 +18,4 @@ public class CompletedPartRequest {
     @Schema(description = "ETag returned by S3 for the uploaded part")
     @NotBlank private String eTag;
 }
+

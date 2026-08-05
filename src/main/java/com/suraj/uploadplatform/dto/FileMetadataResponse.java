@@ -22,6 +22,8 @@ public class FileMetadataResponse {
 
     private String s3Key;
 
+    private String checksum;
+
     private String contentType;
 
     private Long size;
@@ -38,3 +40,5 @@ public class FileMetadataResponse {
 
     private Instant updatedAt;
 }
+
+

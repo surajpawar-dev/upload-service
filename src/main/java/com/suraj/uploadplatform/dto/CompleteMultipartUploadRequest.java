@@ -15,3 +15,4 @@ public class CompleteMultipartUploadRequest {
     @Schema(description = "Completed multipart upload parts returned by S3")
     @NotEmpty private List<@Valid CompletedPartRequest> parts;
 }
+
