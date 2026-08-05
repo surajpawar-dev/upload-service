@@ -1,4 +1,4 @@
-# PDF Upload Service
+# RAG Upload Service
 
 Spring Boot service for securely managing the PDF upload lifecycle. This service owns upload metadata, S3 upload coordination, upload status, validation, logging, and upload-completed event publication.
 
@@ -48,6 +48,20 @@ AWS credentials can come from any standard AWS SDK source:
 
 ## Required Infrastructure
 
+For local platform runs, the parent `document-rag-platform/docker-compose.yml` provides LocalStack, OpenSearch, and the downstream Document Processing Service URL. The service runs with:
+
+```text
+SPRING_PROFILES_ACTIVE=local
+```
+
+For higher environments such as dev, staging, or production, run with:
+
+```text
+SPRING_PROFILES_ACTIVE=prod
+```
+
+Do not point this service at LocalStack in higher environments. Leave `AWS_S3_ENDPOINT` empty or unset so the AWS SDK uses the real AWS S3 endpoint for the configured region.
+
 ### Amazon S3
 
 Create a bucket and provide its name through `AWS_S3_BUCKET`.
@@ -91,6 +105,87 @@ PUT /files
 ```
 
 The idempotency lookup requires `idempotencyKey` to be searchable as a keyword field. The startup initializer configures that automatically.
+
+### Document Processing Service
+
+The upload service calls the Document Processing Service after a successful upload. In higher environments, deploy `rag-document-processing-service` first or expose it through an internal load balancer/service DNS name.
+
+Configure:
+
+```text
+DOCUMENT_PROCESSING_BASE_URL=https://document-processing.internal.example.com
+```
+
+Use an internal network URL when possible. Public internet exposure is not required for service-to-service traffic.
+
+### CloudWatch Logs
+
+Console logging is the default local behavior. If CloudWatch logging is enabled for a higher environment, create the log group and allow the runtime IAM role to write log events.
+
+Required permissions when CloudWatch logging is used:
+
+```text
+logs:CreateLogStream
+logs:PutLogEvents
+logs:DescribeLogStreams
+```
+
+Configure:
+
+```text
+CLOUDWATCH_LOG_GROUP=/document-rag-platform/rag-upload-service
+CLOUDWATCH_LOG_STREAM=prod
+```
+
+## Higher Environment Configuration
+
+Minimum production variables:
+
+```text
+SPRING_PROFILES_ACTIVE=prod
+SERVER_PORT=8080
+
+AWS_REGION=us-east-1
+AWS_S3_BUCKET=documents-prod
+AWS_S3_ENDPOINT=
+AWS_S3_PATH_STYLE_ACCESS_ENABLED=false
+
+OPENSEARCH_ENABLED=true
+OPENSEARCH_URIS=https://opensearch-prod.example.com
+OPENSEARCH_USERNAME=<from-secret>
+OPENSEARCH_PASSWORD=<from-secret>
+
+DOCUMENT_PROCESSING_ENABLED=true
+DOCUMENT_PROCESSING_BASE_URL=https://document-processing.internal.example.com
+
+CLOUDWATCH_LOG_STREAM=prod
+```
+
+AWS credentials should come from the hosting platform, not hardcoded variables:
+
+- ECS task role.
+- EKS IRSA/service account role.
+- EC2 instance profile.
+- CI/CD or secret manager only when a role is not available.
+
+Required AWS permissions:
+
+```text
+s3:PutObject
+s3:GetObject
+s3:HeadObject
+s3:AbortMultipartUpload
+s3:CreateMultipartUpload
+s3:UploadPart
+s3:CompleteMultipartUpload
+```
+
+Production notes:
+
+- Use private networking for OpenSearch and downstream service calls.
+- Use TLS endpoints for OpenSearch and internal service URLs.
+- Keep S3 bucket names environment-specific, for example `documents-dev`, `documents-staging`, and `documents-prod`.
+- Do not set `AWS_ACCESS_KEY_ID=test`, `AWS_SECRET_ACCESS_KEY=test`, or LocalStack endpoint values outside local development.
 
 ## Configuration
 
