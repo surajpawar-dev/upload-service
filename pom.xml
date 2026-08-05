@@ -8,10 +8,10 @@
     <relativePath/>
     <!-- lookup parent from repository -->
   </parent>
-  <groupId>com.suraj.uploadplatform</groupId>
-  <artifactId>upload-platform</artifactId>
+  <groupId>com.suraj.rag</groupId>
+  <artifactId>rag-upload-service</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-  <name>upload-platform</name>
+  <name>rag-upload-service</name>
   <description>Spring Boot service for file upload metadata and S3 integration</description>
   <url/>
   <licenses>

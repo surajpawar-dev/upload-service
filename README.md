@@ -112,7 +112,7 @@ Configuration is loaded from `src/main/resources/application.properties`. Most s
 | `UPLOAD_MULTIPART_PART_SIZE_BYTES` | `10485760` | Multipart part size, default 10 MB. |
 | `UPLOAD_PRESIGNED_URL_EXPIRATION_MINUTES` | `15` | Presigned URL expiry window. |
 | `UPLOAD_MAX_FILE_SIZE_BYTES` | `1048576000` | Max accepted PDF size, default 1 GB. |
-| `CLOUDWATCH_LOG_GROUP` | `/upload-platform/application` | CloudWatch log group. |
+| `CLOUDWATCH_LOG_GROUP` | `/document-rag-platform/rag-upload-service` | CloudWatch log group. |
 | `CLOUDWATCH_LOG_STREAM` | `local` | CloudWatch log stream. |
 
 Spring multipart limits are configured as:
@@ -129,7 +129,7 @@ If `UPLOAD_SMALL_FILE_MAX_BYTES` is raised above 100 MB, also raise these Spring
 From the project root:
 
 ```powershell
-cd C:\Users\ASUS\OneDrive\Desktop\MyCodes\UploadProject\upload-platform
+cd C:\Users\ASUS\OneDrive\Desktop\mycodes\document-rag-platform\rag-upload-service
 ```
 
 Set required environment variables in PowerShell:
@@ -172,8 +172,8 @@ http://localhost:8080
 Build and run the image:
 
 ```powershell
-docker build -t upload-platform:latest .
-docker run --rm -p 8080:8080 --name upload-platform upload-platform:latest
+docker build -t rag-upload-service:latest .
+docker run --rm -p 8080:8080 --name rag-upload-service rag-upload-service:latest
 ```
 
 The Docker image defaults to local mode with S3 and OpenSearch disabled, so it can start immediately. See `API_DOCUMENTATION.md` for frontend/Postman examples and production Docker environment variables.

@@ -4,11 +4,11 @@
     <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
 
     <springProperty scope="context" name="AWS_REGION" source="logging.cloudwatch.region" defaultValue="us-east-1"/>
-    <springProperty scope="context" name="CLOUDWATCH_LOG_GROUP" source="logging.cloudwatch.log-group" defaultValue="/upload-platform/application"/>
+    <springProperty scope="context" name="CLOUDWATCH_LOG_GROUP" source="logging.cloudwatch.log-group" defaultValue="/document-rag-platform/rag-upload-service"/>
     <springProperty scope="context" name="CLOUDWATCH_LOG_STREAM" source="logging.cloudwatch.log-stream" defaultValue="local"/>
 
     <springProfile name="cloudwatch">
-        <appender name="CLOUDWATCH" class="com.suraj.uploadplatform.infrastructure.logging.CloudWatchLogbackAppender">
+        <appender name="CLOUDWATCH" class="com.suraj.rag.upload.infrastructure.logging.CloudWatchLogbackAppender">
             <region>${AWS_REGION}</region>
             <logGroup>${CLOUDWATCH_LOG_GROUP}</logGroup>
             <logStream>${CLOUDWATCH_LOG_STREAM}</logStream>

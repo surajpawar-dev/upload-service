@@ -11,9 +11,9 @@ RUN mvn -B -ntp package -DskipTests
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 RUN groupadd --system app && useradd --system --gid app --home-dir /app app
-COPY --from=build /workspace/target/upload-platform-0.0.1-SNAPSHOT.jar /app/upload-platform.jar
+COPY --from=build /workspace/target/rag-upload-service-0.0.1-SNAPSHOT.jar /app/rag-upload-service.jar
 RUN mkdir -p /app/data/uploads && chown -R app:app /app
 USER app
 EXPOSE 8080
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+UseContainerSupport"
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/upload-platform.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/rag-upload-service.jar"]

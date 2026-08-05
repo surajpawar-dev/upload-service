@@ -23,25 +23,25 @@ GET /actuator/health
 Build the image:
 
 ```powershell
-docker build -t upload-platform:latest .
+docker build -t rag-upload-service:latest .
 ```
 
 Run locally without AWS/OpenSearch:
 
 ```powershell
-docker run --rm -p 8080:8080 --name upload-platform upload-platform:latest
+docker run --rm -p 8080:8080 --name rag-upload-service rag-upload-service:latest
 ```
 
 Allow a different frontend origin:
 
 ```powershell
-docker run --rm -p 8080:8080 -e CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173 upload-platform:latest
+docker run --rm -p 8080:8080 -e CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173 rag-upload-service:latest
 ```
 
 This local mode stores metadata in memory and uploaded files under `/app/data/uploads` inside the container. Use a volume if you want uploaded files to survive container removal:
 
 ```powershell
-docker run --rm -p 8080:8080 -v upload-platform-data:/app/data/uploads --name upload-platform upload-platform:latest
+docker run --rm -p 8080:8080 -v rag-upload-service-data:/app/data/uploads --name rag-upload-service rag-upload-service:latest
 ```
 
 Run with real AWS S3 and OpenSearch:
@@ -56,7 +56,7 @@ docker run --rm -p 8080:8080 `
   -e AWS_ACCESS_KEY_ID=your-access-key `
   -e AWS_SECRET_ACCESS_KEY=your-secret-key `
   -e OPENSEARCH_URIS=http://your-opensearch-host:9200 `
-  --name upload-platform upload-platform:latest
+  --name rag-upload-service rag-upload-service:latest
 ```
 
 ## Initiate Upload
