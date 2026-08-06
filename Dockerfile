@@ -4,9 +4,9 @@ COPY pom.xml ./
 COPY .mvn .mvn
 COPY mvnw mvnw
 COPY mvnw.cmd mvnw.cmd
-RUN mvn -B -ntp dependency:go-offline
+RUN mvn -B -ntp -Dmaven.wagon.http.retryHandler.count=5 dependency:go-offline
 COPY src src
-RUN mvn -B -ntp package -DskipTests
+RUN mvn -B -ntp -Dmaven.wagon.http.retryHandler.count=5 package -DskipTests
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
